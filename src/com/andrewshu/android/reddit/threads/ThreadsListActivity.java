@@ -36,8 +36,10 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -618,7 +620,14 @@ public final class ThreadsListActivity extends ListActivity {
     	mVoteTargetThing = item;
     	mJumpToThreadId = item.getId();
     	
+    	SharedPreferences shared = getSharedPreferences(Constants.SHARED_PREFS, MODE_PRIVATE);
+    	
+    	if(shared.getBoolean("usesLinks", true)) {
+    		showComments(item);
+    	}
+    	else {
     	showDialog(Constants.DIALOG_THREAD_CLICK);
+    	}
     }
 
     /**
@@ -1439,6 +1448,13 @@ public final class ThreadsListActivity extends ListActivity {
     		return new OnClickListener() {
 				public void onClick(View v) {
 					removeDialog(Constants.DIALOG_THREAD_CLICK);
+					
+					//Set that the user just wants to see a link from now on
+					SharedPreferences shared = getSharedPreferences(Constants.SHARED_PREFS, MODE_PRIVATE);
+					SharedPreferences.Editor editor = shared.edit();
+					editor.putBoolean("usesLinks", false);
+					editor.commit();// commit is important here.
+					
 					setLinkClicked(thingInfo);
 					Common.launchBrowser(ThreadsListActivity.this, thingInfo.getUrl(),
 							Util.createThreadUri(thingInfo).toString(),
@@ -1455,12 +1471,7 @@ public final class ThreadsListActivity extends ListActivity {
 					CacheInfo.invalidateCachedThread(ThreadsListActivity.this);
 					
 					// Launch an Intent for CommentsListActivity
-					Intent i = new Intent(ThreadsListActivity.this, CommentsListActivity.class);
-					i.setData(Util.createThreadUri(thingInfo));
-					i.putExtra(Constants.EXTRA_SUBREDDIT, thingInfo.getSubreddit());
-					i.putExtra(Constants.EXTRA_TITLE, thingInfo.getTitle());
-					i.putExtra(Constants.EXTRA_NUM_COMMENTS, Integer.valueOf(thingInfo.getNum_comments()));
-					startActivity(i);
+					showComments(thingInfo);
 				}
 			};
 		}
@@ -1537,4 +1548,13 @@ public final class ThreadsListActivity extends ListActivity {
 		    }
         }
     }
+
+	private void showComments(final ThingInfo thingInfo) {
+		Intent i = new Intent(ThreadsListActivity.this, CommentsListActivity.class);
+		i.setData(Util.createThreadUri(thingInfo));
+		i.putExtra(Constants.EXTRA_SUBREDDIT, thingInfo.getSubreddit());
+		i.putExtra(Constants.EXTRA_TITLE, thingInfo.getTitle());
+		i.putExtra(Constants.EXTRA_NUM_COMMENTS, Integer.valueOf(thingInfo.getNum_comments()));
+		startActivity(i);
+	}
 }

@@ -318,4 +318,7 @@ public class Constants {
 	
     // A short HTML file returned by reddit, so we can get the modhash
     public static final String MODHASH_URL = REDDIT_BASE_URL + "/r";
+    
+    //Add on shared prefs
+    public static final String SHARED_PREFS = "MY_REDDIT_PREFS";
 }
